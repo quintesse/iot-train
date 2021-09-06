@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Blue Train Controller</title>
+        <script language="javascript">
+
+            function init() {
+                createWebSocket();
+            }
+
+            function createWebSocket() {
+                var scheme, defaultPort
+                if (window.location.protocol == 'https:') {
+                    scheme = 'wss:';
+                    defaultPort = 443;
+                } else {
+                    scheme = 'ws:';
+                    defaultPort = 80;
+                }
+                var wsUri = scheme + '//' + window.location.hostname;
+                if (window.location.port !== defaultPort) {
+                    wsUri += ':' + window.location.port;
+                }
+                wsUri += '/wsspeed';
+                console.log("Connecting Web Socket to " + wsUri + "...")
+                websocket           = new WebSocket(wsUri);
+                websocket.onopen    = function(evt) { onOpen    (evt) };
+                websocket.onclose   = function(evt) { onClose   (evt) };
+                websocket.onmessage = function(evt) { onMessage (evt) };
+                websocket.onerror   = function(evt) { onError   (evt) };
+            }
+
+            function onOpen(evt) {
+                console.log("Web Socket connected");
+            }
+
+            function onClose(evt) {
+                console.log("Web Socket disconnected");
+            }
+
+            function onMessage(evt) {
+                console.log("That's weird, we have an incoming Web Socket message: " + evt.data);
+            }
+
+            function onError(evt) {
+                console.log('Web Socket ERROR : ' + evt.data);
+            }
+
+            function sendMsg(msg) {
+                console.log('Sending Web Socket message : ' + msg);
+                websocket.send(msg);
+            }
+
+            function sendSpeedMsg(button) {
+                var input = button.form.elements['speed'];
+                var speed = input.value
+                sendMsg(speed);
+            }
+
+            window.addEventListener("load", init, false);
+        </script>
+    </head>
+    <body>
+        <h2>Blue Train Controller</h2>
+        <img src="bluetrain.png" />
+        <form action="/speed" method="post" target="dummyframe">
+            <b>Speed (-100 to 100) :</b>
+            <input name="speed" type="number" min="-100" max="100" />
+            <!-- input type="submit" value="Set" / -->
+            <input type="button" value="Set" onClick="sendSpeedMsg(this)" /><br/>
+            <br/>
+            <input type="button" value="-100%" onClick="sendMsg(-100)" />
+            <input type="button" value="-75%" onClick="sendMsg(-75)" />
+            <input type="button" value="-50%" onClick="sendMsg(-50)" />
+            <input type="button" value="-25%" onClick="sendMsg(-25)" />
+            <input type="button" value="Stop" onClick="sendMsg(0)" />
+            <input type="button" value="+25%" onClick="sendMsg(25)" />
+            <input type="button" value="+50%" onClick="sendMsg(50)" />
+            <input type="button" value="+75%" onClick="sendMsg(75)" />
+            <input type="button" value="+100%" onClick="sendMsg(100)" />
+        </form>
+        <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+    </body>
+</html>

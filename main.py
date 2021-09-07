@@ -18,26 +18,30 @@ async def run():
         from hello import say_hello
         say_hello()
 
-        from wifi_manager import WifiManager
-        from websrv import start as webstart
-
         # Let's turn on the motor as early as possible,
         # that way it can be played with even when the
         # remote control feature isn't used
         import motor
         imotor = motor.TB6612.Motor(26, 27, 25)
+        imotor.speedTo(75)
 
-        from touchin import readInput
-        uasyncio.create_task(readInput(imotor))
+        from touchin import handleInput
+        handleInput(imotor)
         
-        #bt = uasyncio.get_event_loop().create_task(led.blink())
+        await uasyncio.sleep_ms(10)
+
+        from wifi_manager import WifiManager
+        from websrv import start as webstart
+
+        await uasyncio.sleep_ms(10)
+
         print("Connecting to network...")
         wm = WifiManager(ssid = serviceSSID, password = servicePwd)
         wm.wlan_sta.config(dhcp_hostname=serviceHost)
         wm.connect()
-        #bt.cancel()
-        #led.led_on()
-        
+            
+        await uasyncio.sleep_ms(10)
+
         # Starting web server
         led.led_blue()
         webstart(imotor)
@@ -51,8 +55,6 @@ async def run():
         led.led_green()
         await uasyncio.sleep_ms(1000)
         led.led_off()
-
-        uasyncio.create_task(led.ablink())
 
     except:
         led.led_red()

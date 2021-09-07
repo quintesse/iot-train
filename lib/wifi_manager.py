@@ -7,8 +7,7 @@ import machine
 import network
 import usocket
 import ure
-import utime
-
+import uasyncio
 
 class WifiManager:
 
@@ -42,7 +41,7 @@ class WifiManager:
         self.reboot = False
 
 
-    def connect(self):
+    async def connect(self):
         if self.wlan_sta.isconnected():
             return
         profiles = self.__ReadProfiles()
@@ -50,10 +49,10 @@ class WifiManager:
             ssid = ssid.decode("utf-8")
             if ssid in profiles:
                 password = profiles[ssid]
-                if self.__WifiConnect(ssid, password):
+                if await self.__WifiConnect(ssid, password):
                     return
         print('Could not connect to any WiFi network. Starting the configuration portal...')
-        self.__WebServer()
+        await self.__WebServer()
         
     
     def disconnect(self):
@@ -91,7 +90,7 @@ class WifiManager:
         return profiles
 
 
-    def __WifiConnect(self, ssid, password):
+    async def __WifiConnect(self, ssid, password):
         print('Trying to connect to:', ssid)
         self.wlan_sta.connect(ssid, password)
         for _ in range(100):
@@ -100,13 +99,13 @@ class WifiManager:
                 return True
             else:
                 print('.', end='')
-                utime.sleep_ms(100)
+                await uasyncio.sleep_ms(100)
         print('\nConnection failed!')
         self.wlan_sta.disconnect()
         return False
 
     
-    def __WebServer(self):
+    async def __WebServer(self):
         self.wlan_ap.active(True)
         self.wlan_ap.config(essid = self.ap_ssid, password = self.ap_password, authmode = self.ap_authmode)
         server_socket = usocket.socket()
@@ -143,9 +142,9 @@ class WifiManager:
                     if url == '':
                         self.__HandleRoot()
                     elif url == 'configure':
-                        self.__HandleConfigure()
+                        await self.__HandleConfigure()
                     else:
-                        self.__HandleNotFound()
+                        await self.__HandleNotFound()
             except Exception:
                 print('Something went wrong! Reboot and try again.')
                 return
@@ -208,27 +207,28 @@ class WifiManager:
         self.client.close()
 
 
-    def __HandleConfigure(self):
+    async def __HandleConfigure(self):
         match = ure.search('ssid=([^&]*)&password=(.*)', self.request)
         if match:
             ssid = match.group(1).decode('utf-8').replace('%3F', '?').replace('%21', '!').replace('%23', '#')
             password = match.group(2).decode('utf-8').replace('%3F', '?').replace('%21', '!')
             if len(ssid) == 0:
                 self.__SendResponse("""<p>SSID must be providaded!</p><p>Go back and try again!</p>""", 400)
-            elif self.__WifiConnect(ssid, password):
+            elif await self.__WifiConnect(ssid, password):
                 self.__SendResponse("""<p>Successfully connected to</p><h1>{0}</h1><p>IP address: {1}</p>""".format(ssid, self.wlan_sta.ifconfig()[0]))
                 profiles = self.__ReadProfiles()
                 profiles[ssid] = password
                 self.__WriteProfiles(profiles)
-                utime.sleep(5)
+                uasyncio.sleep(5)
             else:
                 self.__SendResponse("""<p>Could not connect to</p><h1>{0}</h1><p>Go back and try again!</p>""".format(ssid))
-                utime.sleep(5)
+                uasyncio.sleep(5)
         else:
             self.__SendResponse("""<p>Parameters not found!</p>""", 400)
-            utime.sleep(5)
+            uasyncio.sleep(5)
 
 
-    def __HandleNotFound(self):
+    async def __HandleNotFound(self):
         self.__SendResponse("""<p>Path not found!</p>""", 404)
-        utime.sleep(5)
+        uasyncio.sleep(5)
+

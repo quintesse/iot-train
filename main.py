@@ -23,7 +23,7 @@ async def run():
         # remote control feature isn't used
         import motor
         imotor = motor.TB6612.Motor(26, 27, 25)
-        imotor.speedTo(75)
+        #imotor.speedTo(75)
 
         from touchin import handleInput
         handleInput(imotor)
@@ -38,7 +38,7 @@ async def run():
         print("Connecting to network...")
         wm = WifiManager(ssid = serviceSSID, password = servicePwd)
         wm.wlan_sta.config(dhcp_hostname=serviceHost)
-        wm.connect()
+        await wm.connect()
             
         await uasyncio.sleep_ms(10)
 

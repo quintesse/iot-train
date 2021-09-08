@@ -1,62 +1,23 @@
-# Main application process
 
-import led, uasyncio
-
-async def run():
-    # Put your code here
-    serviceHost = "bluetrain"
-    serviceSSID = "BlueTrainController"
-    servicePwd = "danitrain"
+# Determines if boot process should be halted
+def halt_boot():
+    # Check if pin 4 is HIGH
+    from machine import Pin
+    p = Pin(4, Pin.IN, Pin.PULL_DOWN)
+    return p.value() == 1
     
-    led.led_orange()
-    led.led_on()
+if halt_boot():
+    print("Boot process interrupted!")
+else:
+    import start, uasyncio as asyncio
+    asyncio.run(start.run())
+    asyncio.get_event_loop().run_forever()
 
-    try:
-        import ulogging as logging
-        logging.basicConfig(level=logging.INFO)
+def reload(mod):
+    import gc
+    from sys import modules
+    mod_name = mod.__name__
+    del modules[mod_name]
+    gc.collect()
+    return __import__(mod_name)
 
-        from hello import say_hello
-        say_hello()
-
-        # Let's turn on the motor as early as possible,
-        # that way it can be played with even when the
-        # remote control feature isn't used
-        import motor
-        imotor = motor.TB6612.Motor(26, 27, 25)
-        #imotor.speedTo(75)
-
-        from touchin import handleInput
-        handleInput(imotor)
-        
-        await uasyncio.sleep_ms(10)
-
-        from wifi_manager import WifiManager
-        from websrv import start as webstart
-
-        await uasyncio.sleep_ms(10)
-
-        print("Connecting to network...")
-        wm = WifiManager(ssid = serviceSSID, password = servicePwd)
-        wm.wlan_sta.config(dhcp_hostname=serviceHost)
-        await wm.connect()
-            
-        await uasyncio.sleep_ms(10)
-
-        # Starting web server
-        led.led_blue()
-        webstart(imotor)
-
-        print("")
-        print("-------------------------------------------------------------------")
-        print("    Remote train control now accessible on http://%s.local" % serviceHost)
-        print("-------------------------------------------------------------------")
-        print("")
-
-        led.led_green()
-        await uasyncio.sleep_ms(1000)
-        led.led_off()
-
-    except:
-        led.led_red()
-        raise
-    

@@ -8,8 +8,8 @@ async def run():
     serviceSSID = "BlueTrainController"
     servicePwd = "danitrain"
     
-    led.led_orange()
-    led.led_on()
+    led.blink(count=2)
+    led.on()
 
     try:
         from hello import say_hello
@@ -25,25 +25,19 @@ async def run():
         #from touchin import handleInput
         #handleInput(imotor)
         
-        await uasyncio.sleep_ms(10)
-
         from wifi_manager import WifiManager
-
-        await uasyncio.sleep_ms(10)
 
         print("Connecting to network...")
         wm = WifiManager(ssid = serviceSSID, password = servicePwd)
         wm.wlan_sta.config(dhcp_hostname=serviceHost)
         await wm.connect()
             
-        await uasyncio.sleep_ms(10)
-
         from websrv import start as webstart
         
-        await uasyncio.sleep_ms(10)
+        led.blink(count=3)
+        led.on()
 
         # Starting web server
-        led.led_blue()
         webstart(imotor)
 
         print("")
@@ -52,11 +46,10 @@ async def run():
         print("-------------------------------------------------------------------")
         print("")
 
-        led.led_green()
-        await uasyncio.sleep_ms(1000)
-        led.led_off()
+        led.blink(delay=100, count=4)
+        led.on()
 
     except:
-        led.led_red()
+        led.blink(delay=50)
         raise
     

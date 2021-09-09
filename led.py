@@ -8,13 +8,13 @@ _pinLED = Pin(2, Pin.OUT)
 # Count how many times led_on was called
 _ledOnCount = 0
 
-def led_on():
+def on():
     global _ledOnCount, _pinLED
     _ledOnCount += 1
     # Turn on the LED (setting pin LOW!)
     _pinLED.off()
     
-def led_off():
+def off():
     global _ledOnCount, _pinLED
     if _ledOnCount > 1:
         _ledOnCount -= 1;
@@ -23,36 +23,21 @@ def led_off():
         # Turn off the LED (setting pin HIGH!)
         _pinLED.on()
 
-async def ablink(delay=200):
+async def ablink(delay=200, count=None):
     import uasyncio
-    while True:
-        led_on()
+    while count is None or count > 0:
+        on()
         await uasyncio.sleep_ms(delay)
-        led_off()
+        off()
         await uasyncio.sleep_ms(delay)
+        count -= 1
         
-def blink(delay=200):
+def blink(delay=200, count=None):
     import time
-    while True:
-        led_on()
-        time.sleep(delay)
-        led_off()
-        time.sleep(delay)
+    while count is None or count > 0:
+        on()
+        time.sleep_ms(delay)
+        off()
+        time.sleep_ms(delay)
+        count -= 1
         
-def led_white():
-    led_on()
-
-def led_red():
-    led_on()
-
-def led_green():
-    led_on()
-
-def led_blue():
-    led_on()
-
-def led_yellow():
-    led_on()
-
-def led_orange():
-    led_on()

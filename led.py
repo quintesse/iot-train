@@ -1,31 +1,27 @@
 # Simple LED management
 
-from machine import SPI, Pin
-from dotstar import DotStar
-import tinypico as TinyPICO
+from machine import Pin
 
-# Configure SPI for controlling the DotStar
-# Internally we are using software SPI for this as the pins being used are not hardware SPI pins
-_spi = SPI(sck=Pin( TinyPICO.DOTSTAR_CLK ), mosi=Pin( TinyPICO.DOTSTAR_DATA ), miso=Pin( TinyPICO.SPI_MISO) ) 
-_dotstar = DotStar(_spi, 1, brightness = 0.5 ) # Just one led, half brightness
+# The pin connected to the on-board LED
+_pinLED = Pin(2, Pin.OUT)
+
 # Count how many times led_on was called
 _ledOnCount = 0
 
 def led_on():
-    global _ledOnCount, _dotstar
+    global _ledOnCount, _pinLED
     _ledOnCount += 1
-    # Turn on the power to the DotStar
-    TinyPICO.set_dotstar_power( True )
-    _dotstar.show()
-
+    # Turn on the LED (setting pin LOW!)
+    _pinLED.off()
+    
 def led_off():
-    global _ledOnCount
+    global _ledOnCount, _pinLED
     if _ledOnCount > 1:
         _ledOnCount -= 1;
     else:
         _ledOnCount = 0
-        # Turn off the power to the DotStar
-        TinyPICO.set_dotstar_power( False )
+        # Turn off the LED (setting pin HIGH!)
+        _pinLED.on()
 
 async def ablink(delay=200):
     import uasyncio
@@ -44,25 +40,19 @@ def blink(delay=200):
         time.sleep(delay)
         
 def led_white():
-    global _dotstar
-    _dotstar[0] = (255, 255, 255)
+    led_on()
 
 def led_red():
-    global _dotstar
-    _dotstar[0] = (255, 0, 0)
+    led_on()
 
 def led_green():
-    global _dotstar
-    _dotstar[0] = (0, 255, 0)
+    led_on()
 
 def led_blue():
-    global _dotstar
-    _dotstar[0] = (0, 0, 255)
+    led_on()
 
 def led_yellow():
-    global _dotstar
-    _dotstar[0] = (255, 255, 0)
+    led_on()
 
 def led_orange():
-    global _dotstar
-    _dotstar[0] = (255, 165, 0)
+    led_on()

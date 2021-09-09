@@ -1,10 +1,10 @@
 
 # Determines if boot process should be halted
 def halt_boot():
-    # Check if pin 4 is HIGH
+    # Check if pin 2 is LOW2
     from machine import Pin
-    p = Pin(4, Pin.IN, Pin.PULL_DOWN)
-    return p.value() == 1
+    p = Pin(2, Pin.IN)
+    return p.value() == 0
     
 if halt_boot():
     print("Boot process interrupted!")

@@ -1,59 +1,50 @@
 # Sets up a webserver
 
-from MicroWebSrv2 import *
+from ws_connection import ClientClosedError
+from ws_server import WebSocketClient
+from ws_multiserver import WebSocketMultiServer
 import motor
 
-_wsMod = None
-_mws2 = None
+_server = None
 _motor = None
 
-@WebRoute(GET, '/speed/<speed>')
-def SetSpeed(microWebSrv2, request, args):
-    speed = args["speed"]
-    if isinstance(speed, int) and speed >= -100 and speed <= 100:
-        _motor.speedTo(speed)
-        request.Response.ReturnOk("OK")
-    else:
-        request.Response.ReturnBadRequest()
     
-@WebRoute(POST, '/speed')
-def SetSpeed(microWebSrv2, request):
-    data = request.GetPostedURLEncodedForm()
-    try:
-        speed = int(data["speed"])
-        if speed >= -100 and speed <= 100:
-            _motor.speedTo(speed)
-            request.Response.ReturnOk("OK")
-        else:
-            request.Response.ReturnBadRequest()
-    except:
-        request.Response.ReturnBadRequest()
-    
-def _onWSSetSpeed(webSocket, msg):
-    print("Incoming speed msg : " + msg)
-    speed = int(msg)
-    _motor.speedTo(speed)
-
-def _onWSAccepted(microWebSrv2, webSocket):
-    print("Incoming WebSocket connection:")
-    print('   - User   : %s:%s' % webSocket.Request.UserAddress)
-    print('   - Path   : %s'    % webSocket.Request.Path)
-    print('   - Origin : %s'    % webSocket.Request.Origin)
-    if webSocket.Request.Path.lower() == '/wsspeed' :
+class WSTrainClient(WebSocketClient):
+    def __init__(self, conn):
+        super().__init__(conn)
         print('Connection accepted.')
-        webSocket.OnTextMessage = _onWSSetSpeed
-    else :
-        print('Connection rejected.')
-        webSocket.Close()
-        
+
+    def process(self):
+        try:
+            msg = self.connection.read()
+            if not msg:
+                return
+            msg = msg.decode("utf-8")
+            print("Incoming speed msg : " + msg)
+            speed = int(msg)
+            _motor.speedTo(speed)
+        except ClientClosedError:
+            self.connection.close()
+
+
+class WSTrainServer(WebSocketMultiServer):
+    def __init__(self):
+        super().__init__("www/index.html", 2)
+
+    def _make_client(self, conn):
+        return WSTrainClient(conn)
+    
 def start(imotor):
     assert isinstance(imotor, motor.IMotor), "argument should be of type motor.IMotor"
-    global _wsMod, _mws2, _motor
+    global _server, _motor
     _motor = imotor
-    _wsMod = MicroWebSrv2.LoadModule('WebSockets')
-    _wsMod.OnWebSocketAccepted = _onWSAccepted
-    _mws2 = MicroWebSrv2()
-    _mws2.SetEmbeddedConfig()
-    _mws2.NotFoundURL = '/'
-    _mws2.StartManaged()
+    _server = WSTrainServer()
+    _server.start()
+    try:
+        while True:
+            _server.process_all()
+    except KeyboardInterrupt:
+        pass
+    _server.stop()
+
     

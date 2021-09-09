@@ -22,16 +22,15 @@ async def run():
         # that way it can be played with even when the
         # remote control feature isn't used
         import motor
-        imotor = motor.TB6612.Motor(26, 27, 25)
+        imotor = motor.TB6612.Motor(13, 12, 14, 100) # pins D5-D7
         #imotor.speedTo(75)
 
-        from touchin import handleInput
-        handleInput(imotor)
+        #from touchin import handleInput
+        #handleInput(imotor)
         
         await uasyncio.sleep_ms(10)
 
         from wifi_manager import WifiManager
-        from websrv import start as webstart
 
         await uasyncio.sleep_ms(10)
 
@@ -40,6 +39,10 @@ async def run():
         wm.wlan_sta.config(dhcp_hostname=serviceHost)
         await wm.connect()
             
+        await uasyncio.sleep_ms(10)
+
+        from websrv import start as webstart
+        
         await uasyncio.sleep_ms(10)
 
         # Starting web server

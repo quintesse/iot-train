@@ -12,9 +12,6 @@ async def run():
     led.led_on()
 
     try:
-        import ulogging as logging
-        logging.basicConfig(level=logging.INFO)
-
         from hello import say_hello
         say_hello()
 
